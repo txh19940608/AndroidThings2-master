@@ -1,0 +1,91 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId "com.example.androidthingssmartassistant"
+        minSdkVersion 24
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            //代码混淆
+            minifyEnabled true
+            shrinkResources true
+            zipAlignEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+// 解决重复加载第三方那个jar包问题
+    packagingOptions {
+        pickFirst('lib/*/libgnustl_shared.so')
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+
+    implementation project(':aars')
+
+    implementation project(':models')
+
+    compile 'com.spotify.sdk:spotify-player-24-noconnect-2.20b@aar'
+
+    compile 'com.yandex.android:speechkit:2.5.0'
+    //语音识别
+//    api project(':yandexSpeechKit')
+
+    //实现AIListener接口的类。这个类将处理来自API.AI的响应,它们是“ai.api：libai：1.6.12”的一部分
+    api 'ai.api:libai:1.6.12'
+
+    //自然语言理解,机器学习
+    api 'ai.api:sdk:2.0.7@aar'
+
+    //google解析Json的一个开源框架
+    api 'com.google.code.gson:gson:2.8.2'
+
+    //Material Design Support Library
+    api 'com.android.support:design:26.1.0'
+
+
+
+    //强大的图片下载和缓存库
+    api 'com.squareup.picasso:picasso:2.5.2'
+
+    //RFID-RC522 IC卡库
+    api 'com.galarzaa.android-things:rc522:0.1.1'
+
+    //   compile 'com.android.support:appcompat-v7:25.3.1'
+
+    //amazonaws的文本以语音形式输出的库
+    api 'com.amazonaws:aws-android-sdk-polly:2.6.2'
+
+    //Spotify是全球最大的正版流媒体音乐服务平台
+    //   api 'com.spotify.sdk:spotify-player-24-noconnect-2.20b@aar'
+
+    //Pocketsphinx进行唤醒识别库
+//    api 'edu.cmu.pocketsphinx:pocketsphinx@aar'
+
+    //android things 库
+    provided 'com.google.android.things:androidthings:0.5.1-devpreview'
+
+    //注解处理器,编译期间根据注解(Annotation)获取相关数据
+    annotationProcessor 'org.apache.logging.log4j:log4j-core:2.2'
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+}
