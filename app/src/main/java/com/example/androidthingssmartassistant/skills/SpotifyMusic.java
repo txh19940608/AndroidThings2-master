@@ -86,7 +86,7 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
      * 网络请求
       * @return
      */
-
+/*
     @SuppressLint("StaticFieldLeak")
     public String getToken() {
        return new  AsyncTask<Void, Void ,String>(){
@@ -131,7 +131,7 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
                    e.printStackTrace();
                    return null;
                 }
-              }
+              }*/
 
 
     /**
@@ -157,7 +157,7 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
     @Override
     public void onLoginFailed(Error error) {
       Log.d(TAG,"Login failed: " +error.name());
-      init(getToken());
+    //  init(getToken());
     }
 
     /**
@@ -235,7 +235,7 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
     /***
      * Random:随机播放
      */
-    public void playRandom(){
+/*    public void playRandom(){
         List<String> artists = getArtistsList();
         if(artists != null){
             //Shuffle
@@ -245,13 +245,13 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
         }else {
             Log.d(TAG,"No artists");
         }
-    }
-
+    }*/
+//22222222222222222233333333333333
 
     /**
      * get Artists List:获取艺术家列表
      * @return
      */
-    private List<String> getArtistsList() {
-    }
+/*    private List<String> getArtistsList() {
+    }*/
 }
