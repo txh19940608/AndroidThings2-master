@@ -19,16 +19,26 @@ import com.spotify.sdk.android.player.Spotify;
 import com.spotify.sdk.android.player.SpotifyPlayer;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+
+import javax.net.ssl.HttpsURLConnection;
 
 
 public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,ConnectionStateCallback{
@@ -82,11 +92,10 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
 
     }
 
-    /***
+/*    *//***
      * 网络请求
       * @return
-     */
-/*
+     *//*
     @SuppressLint("StaticFieldLeak")
     public String getToken() {
        return new  AsyncTask<Void, Void ,String>(){
@@ -131,7 +140,7 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
                    e.printStackTrace();
                    return null;
                 }
-              }*/
+    }*/
 
 
     /**
@@ -235,7 +244,7 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
     /***
      * Random:随机播放
      */
-/*    public void playRandom(){
+public void playRandom(){
         List<String> artists = getArtistsList();
         if(artists != null){
             //Shuffle
@@ -245,13 +254,176 @@ public class SpotifyMusic implements SpotifyPlayer.NotificationCallback,Connecti
         }else {
             Log.d(TAG,"No artists");
         }
-    }*/
-//22222222222222222233333333333333
-//666322
+    }
+
     /**
      * get Artists List:获取艺术家列表
      * @return
      */
-/*    private List<String> getArtistsList() {
-    }*/
+    private List<String> getArtistsList() {
+        try {
+        return new AsyncTask<Void, Void, List<String>>() {
+            @Override
+            protected List doInBackground(Void... params) {
+
+                try {
+                    URL url = new URL("https://api.spotify.com/v1/me/following?type=artist&limit=50");
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setRequestProperty("Authorization", "Bearer " + token);
+
+                    try {
+                        connection.connect();
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(connection.getInputStream())));
+                        StringBuffer sbResponse = new StringBuffer();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sbResponse.append(line).append('\n');
+                        }
+                        try {
+                            JSONArray items = new JSONObject(sbResponse.toString()).getJSONObject("artists").getJSONArray("items");
+                            List<String> artists = new ArrayList<>();
+                            for (int i = 0; i < items.length(); i++) {
+                                JSONObject item = items.getJSONObject(i);
+                                artists.add(item.getString("id"));
+                            }
+                            return artists;
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    } finally {
+                        connection.disconnect();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }.execute().get();
+          } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return null;
+            } catch (ExecutionException e) {
+                    e.printStackTrace();
+                    return null;
+            }
+    }
+/**
+ * playArtist:播放艺术家
+ */
+    public boolean playArtist(String artists){
+        String artistsId =getArtistId(artists);
+        if(artistsId !=null){
+            player.setShuffle(null,true);
+            player.playUri(null,"spotify:artist:" +artistsId,0,0);
+            player.skipToNext(null);
+            return true;
+        }else {
+            return false;
+        }
+
+}
+
+    private String getArtistId(final String artist) {
+        try {
+        return new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... voids) {
+                try {
+                    URL url = new URL("https://api.spotify.com/v1/search?q=" + artist + "&type=artist");
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(connection.getInputStream())));
+                        StringBuffer sbResponse = new StringBuffer();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sbResponse.append(line).append('\n');
+                        }
+                        try {
+                            return new JSONObject(sbResponse.toString()).getJSONObject("artists").getJSONArray("items").getJSONObject(0).getString("id");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return null;
+                        }
+                    } finally {
+                        connection.disconnect();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }.execute().get();
+          } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return null;
+            } catch (ExecutionException e) {
+                    e.printStackTrace();
+                    return null;
+            }
+    }
+
+
+/**playPlaylist
+ *播放列表
+ */
+    public boolean playPlaylist(String  playlist){
+        //map是以键值对来存储数据的
+        Map<String,String>ids = getPlaylistIds(playlist);
+        if(ids!=null){
+            player.setShuffle(null,true);
+            player.playUri(null,"spotify:user:" +ids.get("userId") + ":playlist:"  + ids.get("playlistId"),0,0);
+            player.skipToNext(null);
+            return true;
+        }else {
+            return false;
+        }
+    }
+
+private Map<String, String> getPlaylistIds(final String playlist) {
+        try {
+            return new AsyncTask<Void, Void, Map<String, String>>() {
+                @Override
+                protected Map<String, String> doInBackground(Void... params) {
+                    try {
+                        URL url = new URL("https://api.spotify.com/v1/search?q=" + playlist + "&type=playlist&limit=1");
+                        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+                        try {
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(connection.getInputStream())));
+                            StringBuilder sbResponse = new StringBuilder();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                sbResponse.append(line).append('\n');
+                            }
+                            try {
+                                Map<String, String> ids = new HashMap<>();
+                                ids.put("playlistId", new JSONObject(sbResponse.toString()).getJSONObject("playlists").getJSONArray("items").getJSONObject(0).getString("id"));
+                                ids.put("userId", new JSONObject(sbResponse.toString()).getJSONObject("playlists").getJSONArray("items").getJSONObject(0).getJSONObject("owner").getString("id"));
+                                return ids;
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                return null;
+                            }
+
+                        } finally {
+                            connection.disconnect();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+            }.execute().get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
 }
