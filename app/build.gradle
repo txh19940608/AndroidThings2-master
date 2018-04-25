@@ -33,6 +33,8 @@ repositories {
     }
 }
 
+
+
 dependencies {
 
     implementation project(':aars')
@@ -60,7 +62,9 @@ dependencies {
 
 
     //强大的图片下载和缓存库
-    api 'com.squareup.picasso:picasso:2.5.2'
+    //api 'com.squareup.picasso:picasso:2.5.2'
+
+    compile 'com.github.bumptech.glide:glide:3.7.0'
 
     //RFID-RC522 IC卡库
     api 'com.galarzaa.android-things:rc522:0.1.1'

@@ -21,7 +21,6 @@ import java.util.concurrent.ExecutionException;
  */
 
 public class BingImageSearch {
-
     // Replace the subscriptionKey string value with your valid subscription key.
     static String subscriptionKey = "29a3440e01714f17a81ab58ef30fa715";
 
@@ -74,56 +73,3 @@ public class BingImageSearch {
     }
 }
 
-/*    public List<String> GetUrls(final String query) {
-
-        new AsyncTask<Void, Void, List<String>>() {
-            @Override
-            protected List<String> doInBackground(Void... params) {
-
-                try {
-                    URL url = new URL("https://api.cognitive.microsoft.com/bing/v7.0/suggestions" + query);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    connection.setRequestProperty("Ocp-Apim-Subscription-Key", subscriptionKey);
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(connection.getInputStream())));
-                    StringBuffer sbResponse = new StringBuffer();
-                    String line;
-
-                    while ((line = reader.readLine()) != null) {
-                        sbResponse.append(line).append('\n');
-
-                    }
-
-                    List<String> urls = new LinkedList<>();
-                    JSONObject response = new JSONObject(sbResponse.toString());
-                    JSONArray valuesArray = response.getJSONArray("value");
-
-                    for (int i = 0; i < valuesArray.length(); i++) {
-                        urls.add(valuesArray.getJSONObject(i).getString("thumbnailUrl"));
-                    }
-                    return urls;
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-
-            }finally
-
-            {
-                connection.disconnect();
-            }
-        }catch(IOException e){
-            e.printStackTrace();
-            return null;
-        }
-
-    }.execute().get();
-      } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    return null;
-        } catch (ExecutionException e) {
-        e.printStackTrace();
-        return null;
-        }
-            }
-}*/
