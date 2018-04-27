@@ -43,9 +43,13 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -707,42 +711,177 @@ public class MainActivity extends Activity implements
                             @Override
                             protected String doInBackground(Void... Params) {
                                 StringBuilder sb = new StringBuilder();
-                                List<JSONObject> taska = todoist.getTasks(desiredDate,desiredTask);
-                                if(taska == null)
+                                List<JSONObject> tasks = todoist.getTasks(desiredDate,desiredTask);
+                                if(tasks == null)
                                 return null;
 
                                 String[] numerals ={"First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"};
+                              try {
+                                if(desiredTask !=null && !desiredTask.equals("") && !desiredTask.equals(" ")) {
+                                    if (tasks.size() == 1) {
+                                        JSONObject task = tasks.get(0);
+                                        Calendar itemDate = Calendar.getInstance();
+                                        itemDate.setTime(utcDateFormat.parse(task.getString("due_date_utc").replace("  0000", "")));
 
-                                if(desiredTask !=null && !desiredTask.equals("") && !desiredTask.equals(" ")){
-                                   if(taska.size() == 1){
-                                       JSONObject task = taska.get(0);
-                                       Calendar   itemDate = Calendar.getInstance();
-                                       try {
-                                           itemDate.setTime(utcDateFormat.parse(task.getString("due_date_utc").replace("  0000","")));
+                                        //没有检查错误的常态
+                                        if (itemDate.get(Calendar.HOUR_OF_DAY) == 20 && itemDate.get(Calendar.MINUTE) == 59) {
+                                            sb.append("Specific time not assigned");
+                                        } else {
 
-                                           //没有检查错误的常态
-                                           if(itemDate.get(Calendar.HOUR_OF_DAY) == 20 && itemDate.get(Calendar.MINUTE) == 59){
-                                               sb.append("Specific time not assigned");
-                                           }else {
-
-                                               sb.append("В ");
-                                               sb.append(itemDate.get(Calendar.HOUR_OF_DAY) +3 >=10 ? itemDate.get(Calendar.HOUR_OF_DAY) +3 : "0" +itemDate.get(Calendar.HOUR_OF_DAY)  + 3);
-                                               sb.append(":");
-                                               sb.append(itemDate.get(Calendar.MINUTE) >= 10  ? itemDate.get(Calendar.MINUTE) : "0" + itemDate.get(Calendar.MINUTE));
-
-                                           }
+                                            sb.append("В ");
+                                            sb.append(itemDate.get(Calendar.HOUR_OF_DAY) + 3 >= 10 ? itemDate.get(Calendar.HOUR_OF_DAY) + 3 : "0" + itemDate.get(Calendar.HOUR_OF_DAY) + 3);
+                                            sb.append(":");
+                                            sb.append(itemDate.get(Calendar.MINUTE) >= 10 ? itemDate.get(Calendar.MINUTE) : "0" + itemDate.get(Calendar.MINUTE));
+                                        }
+                                    } else if (tasks.size() > 1) {
+                                        //Collections是一个工具类，sort是其中的静态方法，是用来对List类型进行排序的
+                                        Collections.sort(tasks, new Comparator<JSONObject>() {
+                                            Calendar c1 = Calendar.getInstance();
+                                            Calendar c2 = Calendar.getInstance();
 
 
-                                       } catch (ParseException e) {
-                                           e.printStackTrace();
-                                       } catch (JSONException e) {
-                                           e.printStackTrace();
-                                       }
-                                   }
+                                            @Override
+                                            public int compare(JSONObject o1, JSONObject o2) {
+                                                try {
+                                                    c1.setTime(utcDateFormat.parse(o1.getString("due_date_utc").replace("  0000", "")));
+                                                    c2.setTime(utcDateFormat.parse(o2.getString("due_date_utc").replace("  0000", "")));
+
+                                                    if (c1.get(Calendar.DAY_OF_MONTH) > c2.get(Calendar.DAY_OF_MONTH))
+                                                        return 1;
+                                                    else if (c1.get(Calendar.DAY_OF_MONTH) < c2.get(Calendar.DAY_OF_MONTH))
+                                                        return -1;
+                                                    else
+                                                        return 0;
+                                                } catch (ParseException e) {
+                                                    e.printStackTrace();
+                                                    return 0;
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                    return 0;
+                                                }
+                                            }
+                                        });
+
+                                        int tasksWithoutTime = 0;
+                                        String[] notime = {"but no specific time is assigned", "but time is not set again","there is no time again"};
+                                        for (JSONObject task : tasks) {
+                                            Calendar itemDate = Calendar.getInstance();
+                                            Calendar now = Calendar.getInstance();
+                                            itemDate.setTime(utcDateFormat.parse(task.getString("due_date_utc").replace("  0000", "")));
+
+                                            //noinspection WrongConstant
+                                            if (itemDate.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)) {
+                                                sb.append("Today");
+                                            } else if (itemDate.get(Calendar.DAY_OF_YEAR) - now.get(Calendar.DAY_OF_YEAR) == 1) {
+                                                sb.append("Tomorrow");
+                                            } else if (itemDate.get(Calendar.DAY_OF_YEAR) - now.get(Calendar.DAY_OF_YEAR) == 2) {
+                                                sb.append("Day after tomorrow");
+                                            } else {
+                                                sb.append(itemDate.get(Calendar.DAY_OF_MONTH));
+                                                sb.append(" ");
+                                                sb.append(ruMothsFormatSymbols.getMonths()[itemDate.get(Calendar.MONTH)]);
+                                            }
+
+                                            //noinspection WrongConstant
+                                            if (itemDate.get(Calendar.HOUR_OF_DAY) == 20 && itemDate.get(Calendar.MINUTE) == 59) {
+                                                sb.append(", ");
+                                                try {
+                                                    sb.append(notime[tasksWithoutTime++]);
+                                                } catch (IndexOutOfBoundsException e) {
+                                                    sb.append("time is not set");
+                                                    e.printStackTrace();
+                                                } finally {
+                                                    sb.append(". ");
+                                                }
+                                            } else {
+                                                sb.append(" в ");
+                                                sb.append(itemDate.get(Calendar.HOUR_OF_DAY) + 3 >= 10 ? itemDate.get(Calendar.HOUR_OF_DAY) + 3 : "0" + itemDate.get(Calendar.HOUR_OF_DAY) + 3);
+                                                sb.append(":");
+                                                sb.append(itemDate.get(Calendar.MINUTE) >= 10 ? itemDate.get(Calendar.MINUTE) : "0" + itemDate.get(Calendar.MINUTE));
+                                                sb.append(". ");
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (tasks.size() == 1) {
+                                        JSONObject task = tasks.get(0);
+                                        Calendar itemDate = Calendar.getInstance();
+                                        itemDate.setTime(utcDateFormat.parse(task.getString("due_date_utc").replace("  0000", "")));
+                                        sb.append(task.getString("content"));
+
+                                        //noinspection WrongConstant
+                                        if (itemDate.get(Calendar.HOUR_OF_DAY) != 20 && itemDate.get(Calendar.MINUTE) != 59) {
+                                            sb.append(" в ");
+                                            sb.append(itemDate.get(Calendar.HOUR_OF_DAY) + 3 >= 10 ? itemDate.get(Calendar.HOUR_OF_DAY) + 3 : "0" + itemDate.get(Calendar.HOUR_OF_DAY) + 3);
+                                            sb.append(":");
+                                            sb.append(itemDate.get(Calendar.MINUTE) >= 10 ? itemDate.get(Calendar.MINUTE) : "0" + itemDate.get(Calendar.MINUTE));
+                                        }
+                                    } else {
+                                        int i = 0;
+                                        for (JSONObject task : tasks) {
+                                            try {
+                                                sb.append(numerals[i++]);
+                                            } catch (NullPointerException e) {
+                                                sb.append("Then");
+                                                e.printStackTrace();
+                                            }
+                                            sb.append(" - ");
+                                            String splittedTask[] = task.getString("content").split(".");
+                                            if (splittedTask.length == 0) {
+                                                sb.append(task.getString("content"));
+                                            } else if (splittedTask[0].length() > 3) {
+                                                sb.append(splittedTask[0]);
+                                            } else {
+                                                sb.append(splittedTask[0]);
+                                                sb.append(".");
+                                                sb.append(splittedTask[1]);
+                                            }
+                                            sb.append(". ");
+                                        }
+                                    }
                                 }
-                                return null;
+                              } catch (JSONException | ParseException e) {
+                                  e.printStackTrace();
+                                  return null;
+                              }
+                                Log.d(TAG, sb.toString());
+                                return sb.toString();
                             }
-                        };
+
+                            @Override
+                            protected void onPostExecute(String tasks) {
+                                super.onPostExecute(tasks);
+                                pbMain.setVisibility(View.GONE);
+                                tvSpeeck.setVisibility(View.VISIBLE);
+                                if (tasks != null && !tasks.equals("") && !tasks.equals(" ")) {
+                                    polly.say(tasks, Polly.Lang.Ru);
+                                    tsMain.setText(tasks);
+                                } else {
+                                    tsMain.setText("Нет задач");
+                                }
+                            }
+
+                        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        break;
+
+                    case "tasks.add":
+
+                        final String task = params.get("task") == null ? null : Character.toUpperCase(params.get("task").getAsString().charAt(0)) + params.get("task").getAsString().substring(1);
+                        final String date = params.get("date") == null ? null : params.get("date").getAsString();
+                        final String time = params.get("time") == null ? null : params.get("time").getAsString();
+                        if (todoist.addTask(task, date, time)) {
+                            String success = "The task has been added";
+                            polly.say(success, Polly.Lang.Ru);
+                            tsMain.setText(success);
+                        } else {
+                            String error = "Can not add task";
+                            polly.say(error, Polly.Lang.Ru);
+                            tsMain.setText(error);
+                        }
+                        break;
+
+                    case "music.playlist":
+
                 }
             }
         }
@@ -767,4 +906,12 @@ public class MainActivity extends Activity implements
     public void onTimeout() {
         listenToWakeWord();
     }
+
+    private static DateFormatSymbols ruMothsFormatSymbols = new DateFormatSymbols(){
+        @Override
+        public String[] getMonths() {
+            return new String [] {"January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"};
+        }
+    };
 }
