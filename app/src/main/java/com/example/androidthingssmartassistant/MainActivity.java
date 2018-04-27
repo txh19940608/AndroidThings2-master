@@ -881,6 +881,7 @@ public class MainActivity extends Activity implements
                         break;
 
                     case "music.playlist":
+                        //
 
                 }
             }
